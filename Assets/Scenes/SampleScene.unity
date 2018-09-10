@@ -368,6 +368,28 @@ Prefab:
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: c16f23d47c1633f4ab15361e224fbf04, type: 3}
   m_IsPrefabAsset: 0
+--- !u!1 &532910954 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 100012, guid: c16f23d47c1633f4ab15361e224fbf04,
+    type: 3}
+  m_PrefabInternal: {fileID: 532910953}
+--- !u!114 &532910955
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 532910954}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 38400753c06aea84283336566a31920f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_plane:
+    normal: {x: 5.93, y: 1, z: 0}
+    point: {x: 0, y: 0.64, z: 0}
+  m_debugDraw: 1
+  m_debugPlaneSize: 2
+  m_debugColor: {r: 0, g: 1, b: 0, a: 0.5}
 --- !u!1 &534669902
 GameObject:
   m_ObjectHideFlags: 0
@@ -458,25 +480,3 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   profile: {fileID: 11400000, guid: e2bb715ce0e9da845806e1315026cf66, type: 2}
---- !u!1 &548068012 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 100000, guid: c16f23d47c1633f4ab15361e224fbf04,
-    type: 3}
-  m_PrefabInternal: {fileID: 532910953}
---- !u!114 &548068013
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 0}
-  m_GameObject: {fileID: 548068012}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 38400753c06aea84283336566a31920f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  m_plane:
-    normal: {x: 0, y: 1, z: 0}
-    point: {x: 0, y: 0.68, z: 0}
-  m_debugDraw: 1
-  m_debugPlaneSize: 15
-  m_debugColor: {r: 0, g: 1, b: 0, a: 0.5}

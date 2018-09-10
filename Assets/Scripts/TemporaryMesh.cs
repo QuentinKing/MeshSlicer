@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class TemporaryMesh : MonoBehaviour
+public class TemporaryMesh
 {
     Dictionary<int, int> copiedVerts = new Dictionary<int, int>();
     List<int> newTriangles = new List<int>();

@@ -16,14 +16,14 @@ public class MeshSlicerEditor : Editor
         EditorGUILayout.Space();
         EditorGUILayout.LabelField("Inspector Functions", EditorStyles.boldLabel);
 
-        if (GUILayout.Button("Reset Mesh"))
+        if (GUILayout.Button("Slice This"))
         {
-            meshSlicer.ResetMesh();
+            meshSlicer.SliceCurrentMesh();
         }
 
-        if (GUILayout.Button("Slice Mesh"))
+        if (GUILayout.Button("Slice All Children"))
         {
-            meshSlicer.SliceMesh();
+            meshSlicer.SliceAllChildren();
         }
     }
 }

@@ -15,21 +15,6 @@ public class MeshSlicer : MonoBehaviour
     public float m_debugPlaneSize = 2.0f;
     public Color m_debugColor = new Color(0.0f, 1.0f, 0.0f, 0.5f);
 
-    private Stack<Mesh> resetMeshStack = new Stack<Mesh>();
-    private const int NUM_JOBS = 6;
-
-    /// <summary>
-    /// Removes all slices and resets mesh to original shape
-    /// </summary>
-    public void ResetMesh()
-    {
-        MeshFilter filter = this.transform.GetComponent<MeshFilter>();
-        if (resetMeshStack.Count > 0 && filter != null)
-        {
-            filter.sharedMesh = resetMeshStack.Pop();
-        }
-    }
-
     public void OnDrawGizmosSelected()
     {
         if (!m_debugDraw)
@@ -40,10 +25,10 @@ public class MeshSlicer : MonoBehaviour
             List<Vector3> axes = m_plane.GetCoordinateLines();
 
             Mesh planeMesh = new Mesh();
-            planeMesh.vertices = new Vector3[] { m_plane.point + (axes[0] + axes[1]) * m_debugPlaneSize,
-                                                 m_plane.point + (axes[0] - axes[1]) * m_debugPlaneSize,
-                                                 m_plane.point - (axes[0] - axes[1]) * m_debugPlaneSize,
-                                                 m_plane.point - (axes[0] + axes[1]) * m_debugPlaneSize};
+            planeMesh.vertices = new Vector3[] { Vector3.Scale(m_plane.point, this.transform.localScale) + (axes[0] + axes[1]) * m_debugPlaneSize,
+                                                 Vector3.Scale(m_plane.point, this.transform.localScale) + (axes[0] - axes[1]) * m_debugPlaneSize,
+                                                 Vector3.Scale(m_plane.point, this.transform.localScale) - (axes[0] - axes[1]) * m_debugPlaneSize,
+                                                 Vector3.Scale(m_plane.point, this.transform.localScale) - (axes[0] + axes[1]) * m_debugPlaneSize};
             planeMesh.triangles = new int[] { 0, 3, 1,  0, 1, 3,  0, 2, 3,  0, 3, 2}; // Render back faces
             planeMesh.RecalculateNormals();
 
@@ -52,10 +37,30 @@ public class MeshSlicer : MonoBehaviour
         }
     }
 
+    public void SliceAllChildren()
+    {
+        List<GameObject> originalChildren = new List<GameObject>();
+
+        foreach (Transform child in this.transform)
+        {
+            originalChildren.Add(child.gameObject);
+        }
+
+        foreach (GameObject child in originalChildren)
+        {
+            SliceMesh(child);
+        }
+    }
+
+    public void SliceCurrentMesh()
+    {
+        SliceMesh(this.gameObject);
+    }
+
     /// <summary>
-    /// Slices the mesh along the currently set plane
+    /// Slices the given mesh along the currently set plane
     /// </summary>
-    public void SliceMesh()
+    private void SliceMesh(GameObject meshObject)
     {
         float startTime = Time.realtimeSinceStartup;
 
@@ -65,14 +70,12 @@ public class MeshSlicer : MonoBehaviour
             return;
         }
 
-        MeshFilter filter = this.transform.GetComponent<MeshFilter>();
+        MeshFilter filter = meshObject.GetComponent<MeshFilter>();
         if (filter == null || filter.sharedMesh == null)
         {
             Debug.LogError("No mesh filter attached to gameobject " + this.gameObject.ToString());
             return;
         }
-
-        resetMeshStack.Push(filter.sharedMesh);
 
         AllocatedMesh mesh = new AllocatedMesh(filter.sharedMesh);
         TemporaryMesh meshPositive = new TemporaryMesh();
@@ -205,9 +208,9 @@ public class MeshSlicer : MonoBehaviour
 
         filter.sharedMesh = meshPositive.ConvertToFinalMesh();
 
-        GameObject NewObj = GameObject.Instantiate(this.gameObject);
+        GameObject NewObj = GameObject.Instantiate(meshObject);
         NewObj.GetComponent<MeshFilter>().sharedMesh = meshNegative.ConvertToFinalMesh();
-        NewObj.transform.SetParent(this.transform.parent, false);
+        NewObj.transform.SetParent(meshObject.transform.parent, false);
 
         Debug.LogError("Slice took " + (Time.realtimeSinceStartup - startTime));
     }
