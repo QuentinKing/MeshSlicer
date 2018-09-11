@@ -23,12 +23,15 @@ public class MeshSlicer : MonoBehaviour
         if (m_plane != null && m_plane.IsValid())
         {
             List<Vector3> axes = m_plane.GetCoordinateLines();
+            axes[0] = this.transform.rotation * axes[0];
+            axes[1] = this.transform.rotation * axes[1];
+            Vector3 point = Vector3.Scale(this.transform.rotation * m_plane.point, this.transform.localScale);
 
             Mesh planeMesh = new Mesh();
-            planeMesh.vertices = new Vector3[] { Vector3.Scale(m_plane.point, this.transform.localScale) + (axes[0] + axes[1]) * m_debugPlaneSize,
-                                                 Vector3.Scale(m_plane.point, this.transform.localScale) + (axes[0] - axes[1]) * m_debugPlaneSize,
-                                                 Vector3.Scale(m_plane.point, this.transform.localScale) - (axes[0] - axes[1]) * m_debugPlaneSize,
-                                                 Vector3.Scale(m_plane.point, this.transform.localScale) - (axes[0] + axes[1]) * m_debugPlaneSize};
+            planeMesh.vertices = new Vector3[] { point + (axes[0] + axes[1]) * m_debugPlaneSize,
+                                                 point + (axes[0] - axes[1]) * m_debugPlaneSize,
+                                                 point - (axes[0] - axes[1]) * m_debugPlaneSize,
+                                                 point - (axes[0] + axes[1]) * m_debugPlaneSize};
             planeMesh.triangles = new int[] { 0, 3, 1,  0, 1, 3,  0, 2, 3,  0, 3, 2}; // Render back faces
             planeMesh.RecalculateNormals();
 
@@ -193,6 +196,8 @@ public class MeshSlicer : MonoBehaviour
                     meshPositive.AddTriangle(p1, cutLines[line2].v1, cutLines[line1].v1);
                     meshNegative.AddTriangle(cutLines[line1].v2, cutLines[line2].v2, p3);
                     meshNegative.AddTriangle(p3, p2, cutLines[line1].v2);
+                    meshPositive.RegisterBoundaryLine(cutLines[line2].v1, cutLines[line1].v1);
+                    meshNegative.RegisterBoundaryLine(cutLines[line1].v2, cutLines[line2].v2);
                 }
                 else
                 {
@@ -202,11 +207,14 @@ public class MeshSlicer : MonoBehaviour
                     meshNegative.AddTriangle(p1, cutLines[line2].v2, cutLines[line1].v2);
                     meshPositive.AddTriangle(cutLines[line1].v1, cutLines[line2].v1, p3);
                     meshPositive.AddTriangle(p3, p2, cutLines[line1].v1);
+                    meshPositive.RegisterBoundaryLine(cutLines[line1].v1, cutLines[line2].v1);
+                    meshNegative.RegisterBoundaryLine(cutLines[line2].v2, cutLines[line1].v2);
                 }
             }
         }
 
         filter.sharedMesh = meshPositive.ConvertToFinalMesh();
+        List<BoundaryNode> nodes = meshPositive.boundaries.circularLists;
 
         GameObject NewObj = GameObject.Instantiate(meshObject);
         NewObj.GetComponent<MeshFilter>().sharedMesh = meshNegative.ConvertToFinalMesh();

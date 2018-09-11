@@ -47,6 +47,21 @@ public struct VertexPair
         this.v1 = vertice1;
         this.v2 = vertice2;
     }
+
+    public static bool operator ==(VertexPair x, VertexPair y)
+    {
+        return (x.v1 == y.v1 && x.v2 == y.v2) || (x.v2 == y.v1 && x.v1 == y.v2);
+    }
+
+    public static bool operator !=(VertexPair x, VertexPair y)
+    {
+        return !(x == y);
+    }
+
+    public override int GetHashCode()
+    {
+        return v1.GetHashCode() + v2.GetHashCode();
+    }
 }
 
 /// <summary>

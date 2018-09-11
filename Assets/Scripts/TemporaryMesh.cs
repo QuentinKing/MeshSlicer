@@ -10,6 +10,8 @@ public class TemporaryMesh
     List<Vector3> newNormals = new List<Vector3>();
     List<Vector4> newTangents = new List<Vector4>();
 
+    public BoundaryList boundaries = new BoundaryList();
+
     public TemporaryMesh()
     {
         // Constructor
@@ -40,6 +42,11 @@ public class TemporaryMesh
             newVert2,
             newVert3
         });
+    }
+
+    public void RegisterBoundaryLine(int v1, int v2)
+    {
+        boundaries.AddLine(v1, v2);
     }
 
     public int AddPoint(Vector3 vertex, Vector3 normal, Vector4 tangent)
