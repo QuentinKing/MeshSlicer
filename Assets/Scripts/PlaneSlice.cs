@@ -34,37 +34,6 @@ public struct PlaneSliceLineIntersection
 }
 
 /// <summary>
-/// Struct for defining a pair of vertices
-/// </summary>
-[System.Serializable]
-public struct VertexPair
-{
-    public int v1;  // Vertice 1
-    public int v2;  // Vertice 2
-
-    public VertexPair(int vertice1, int vertice2)
-    {
-        this.v1 = vertice1;
-        this.v2 = vertice2;
-    }
-
-    public static bool operator ==(VertexPair x, VertexPair y)
-    {
-        return (x.v1 == y.v1 && x.v2 == y.v2) || (x.v2 == y.v1 && x.v1 == y.v2);
-    }
-
-    public static bool operator !=(VertexPair x, VertexPair y)
-    {
-        return !(x == y);
-    }
-
-    public override int GetHashCode()
-    {
-        return v1.GetHashCode() + v2.GetHashCode();
-    }
-}
-
-/// <summary>
 /// This struct contains the necessary components to define
 /// a slicing plane in 3D space
 /// </summary>

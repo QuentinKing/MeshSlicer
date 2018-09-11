@@ -86,8 +86,6 @@ public class MeshSlicer : MonoBehaviour
         bool useNormals = mesh.normals.Count > 0;
         bool useTangents = mesh.tangents.Count > 0;
 
-        // Hash types to track computed cuts
-        Dictionary<VertexPair, VertexPair> cutLines = new Dictionary<VertexPair, VertexPair>();
         int triangleLength = mesh.triangles.Count;
         for (int i = 0; i < triangleLength; i += 3)
         {
@@ -137,55 +135,31 @@ public class MeshSlicer : MonoBehaviour
                     base2 = v2;
                 }
 
-                VertexPair line1 = new VertexPair(base1, outlier);
+                Vector3 base1_v = mesh.vertices[base1];
+                Vector3 base2_v = mesh.vertices[base2];
+                Vector3 outlier_v = mesh.vertices[outlier];
+                Vector3 base1_n = mesh.normals[base1];
+                Vector3 base2_n = mesh.vertices[base2];
+                Vector3 outlier_n = mesh.normals[outlier];
+                Vector3 base1_t = mesh.tangents[base1];
+                Vector3 base2_t = mesh.vertices[base2];
+                Vector3 outlier_t = mesh.tangents[outlier];
 
-                // Check if we need to cut the first line
-                if (!cutLines.ContainsKey(line1))
-                {
-                    Vector3 a = mesh.vertices[line1.v1];
-                    Vector3 b = mesh.vertices[line1.v2];
+                PlaneSliceLineIntersection intersection1 = m_plane.GetLineIntersection(base1_v, outlier_v - base1_v);
+                Vector3 newNormal1 = Vector3.negativeInfinity;
+                Vector4 newTangent1 = Vector4.negativeInfinity;
+                if (useNormals) newNormal1 = Vector3.Lerp(base1_n, outlier_n, intersection1.directionIntersectionScalar);
+                if (useTangents) newTangent1 = Vector4.Lerp(base1_t, outlier_t, intersection1.directionIntersectionScalar);
+                int iPos1 = meshPositive.AddPoint(intersection1.intersectionPoint, newNormal1, newTangent1);
+                int iNeg1 = meshNegative.AddPoint(intersection1.intersectionPoint, newNormal1, newTangent1);
 
-                    Vector3 c = mesh.normals[line1.v1];
-                    Vector3 d = mesh.normals[line1.v2];
-
-                    Vector3 e = mesh.tangents[line1.v1];
-                    Vector3 f = mesh.tangents[line1.v2];
-
-                    PlaneSliceLineIntersection intersection = m_plane.GetLineIntersection(a, b - a);
-                    Vector3 newNormal = Vector3.negativeInfinity;
-                    Vector4 newTangent = Vector4.negativeInfinity;
-                    if (useNormals) newNormal = Vector3.Lerp(c, d, intersection.directionIntersectionScalar);
-                    if (useTangents) newTangent = Vector4.Lerp(e, f, intersection.directionIntersectionScalar);
-
-                    int iPos = meshPositive.AddPoint(intersection.intersectionPoint, newNormal, newTangent);
-                    int iNeg = meshNegative.AddPoint(intersection.intersectionPoint, newNormal, newTangent);
-                    cutLines.Add(line1, new VertexPair(iPos, iNeg));
-                }
-
-                VertexPair line2 = new VertexPair(base2, outlier);
-
-                // Check if we need to cut the second line
-                if (!cutLines.ContainsKey(line2))
-                {
-                    Vector3 a = mesh.vertices[line2.v1];
-                    Vector3 b = mesh.vertices[line2.v2];
-
-                    Vector3 c = mesh.normals[line2.v1];
-                    Vector3 d = mesh.normals[line2.v2];
-
-                    Vector3 e = mesh.tangents[line2.v1];
-                    Vector3 f = mesh.tangents[line2.v2];
-
-                    PlaneSliceLineIntersection intersection = m_plane.GetLineIntersection(a, b - a);
-                    Vector3 newNormal = Vector3.negativeInfinity;
-                    Vector4 newTangent = Vector4.negativeInfinity;
-                    if (useNormals) newNormal = Vector3.Lerp(c, d, intersection.directionIntersectionScalar);
-                    if (useTangents) newTangent = Vector4.Lerp(e, f, intersection.directionIntersectionScalar);
-
-                    int iPos = meshPositive.AddPoint(intersection.intersectionPoint, newNormal, newTangent);
-                    int iNeg = meshNegative.AddPoint(intersection.intersectionPoint, newNormal, newTangent);
-                    cutLines.Add(line2, new VertexPair(iPos, iNeg));
-                }
+                PlaneSliceLineIntersection intersection2 = m_plane.GetLineIntersection(base2_v, outlier_v - base2_v);
+                Vector3 newNormal2 = Vector3.negativeInfinity;
+                Vector4 newTangent2 = Vector4.negativeInfinity;
+                if (useNormals) newNormal2 = Vector3.Lerp(base2_n, outlier_n, intersection2.directionIntersectionScalar);
+                if (useTangents) newTangent2 = Vector4.Lerp(base2_t, outlier_t, intersection2.directionIntersectionScalar);
+                int iPos2 = meshPositive.AddPoint(intersection2.intersectionPoint, newNormal2, newTangent2);
+                int iNeg2 = meshNegative.AddPoint(intersection2.intersectionPoint, newNormal2, newTangent2);
 
                 // Add new triangles!
                 if (Mathf.Sign(m_plane.DistanceToPoint(mesh.vertices[outlier])) > 0)
@@ -193,22 +167,22 @@ public class MeshSlicer : MonoBehaviour
                     int p1 = meshPositive.AddPoint(mesh.vertices[outlier], mesh.normals[outlier], mesh.tangents[outlier]);
                     int p2 = meshNegative.AddPoint(mesh.vertices[base1], mesh.normals[base1], mesh.tangents[base1]);
                     int p3 = meshNegative.AddPoint(mesh.vertices[base2], mesh.normals[base2], mesh.tangents[base2]);
-                    meshPositive.AddTriangle(p1, cutLines[line2].v1, cutLines[line1].v1);
-                    meshNegative.AddTriangle(cutLines[line1].v2, cutLines[line2].v2, p3);
-                    meshNegative.AddTriangle(p3, p2, cutLines[line1].v2);
-                    meshPositive.RegisterBoundaryLine(cutLines[line2].v1, cutLines[line1].v1);
-                    meshNegative.RegisterBoundaryLine(cutLines[line1].v2, cutLines[line2].v2);
+                    meshPositive.AddTriangle(p1, iPos2, iPos1);
+                    meshNegative.AddTriangle(iNeg1, iNeg2, p3);
+                    meshNegative.AddTriangle(p3, p2, iNeg1);
+                    meshPositive.RegisterBoundaryLine(iPos2, iPos1);
+                    meshNegative.RegisterBoundaryLine(iNeg1, iNeg2);
                 }
                 else
                 {
                     int p1 = meshNegative.AddPoint(mesh.vertices[outlier], mesh.normals[outlier], mesh.tangents[outlier]);
                     int p2 = meshPositive.AddPoint(mesh.vertices[base1], mesh.normals[base1], mesh.tangents[base1]);
                     int p3 = meshPositive.AddPoint(mesh.vertices[base2], mesh.normals[base2], mesh.tangents[base2]);
-                    meshNegative.AddTriangle(p1, cutLines[line2].v2, cutLines[line1].v2);
-                    meshPositive.AddTriangle(cutLines[line1].v1, cutLines[line2].v1, p3);
-                    meshPositive.AddTriangle(p3, p2, cutLines[line1].v1);
-                    meshPositive.RegisterBoundaryLine(cutLines[line1].v1, cutLines[line2].v1);
-                    meshNegative.RegisterBoundaryLine(cutLines[line2].v2, cutLines[line1].v2);
+                    meshNegative.AddTriangle(p1, iNeg2, iNeg1);
+                    meshPositive.AddTriangle(iPos1, iPos2, p3);
+                    meshPositive.AddTriangle(p3, p2, iPos1);
+                    meshPositive.RegisterBoundaryLine(iPos1, iPos2);
+                    meshNegative.RegisterBoundaryLine(iNeg2, iNeg1);
                 }
             }
         }
