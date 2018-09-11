@@ -139,10 +139,10 @@ public class MeshSlicer : MonoBehaviour
                 Vector3 base2_v = mesh.vertices[base2];
                 Vector3 outlier_v = mesh.vertices[outlier];
                 Vector3 base1_n = mesh.normals[base1];
-                Vector3 base2_n = mesh.vertices[base2];
+                Vector3 base2_n = mesh.normals[base2];
                 Vector3 outlier_n = mesh.normals[outlier];
                 Vector3 base1_t = mesh.tangents[base1];
-                Vector3 base2_t = mesh.vertices[base2];
+                Vector3 base2_t = mesh.tangents[base2];
                 Vector3 outlier_t = mesh.tangents[outlier];
 
                 PlaneSliceLineIntersection intersection1 = m_plane.GetLineIntersection(base1_v, outlier_v - base1_v);
@@ -160,6 +160,16 @@ public class MeshSlicer : MonoBehaviour
                 if (useTangents) newTangent2 = Vector4.Lerp(base2_t, outlier_t, intersection2.directionIntersectionScalar);
                 int iPos2 = meshPositive.AddPoint(intersection2.intersectionPoint, newNormal2, newTangent2);
                 int iNeg2 = meshNegative.AddPoint(intersection2.intersectionPoint, newNormal2, newTangent2);
+
+                /*
+                Vector3 approxIntersection1 = RoundVector3(intersection1.intersectionPoint, 5);
+                if (!positiveBoundary.ContainsKey(approxIntersection1)) positiveBoundary[approxIntersection1] = iPos1;
+                if (!negativeBoundary.ContainsKey(approxIntersection1)) positiveBoundary[approxIntersection1] = iNeg1;
+
+                Vector3 approxIntersection2 = RoundVector3(intersection2.intersectionPoint, 5);
+                if (!positiveBoundary.ContainsKey(approxIntersection2)) positiveBoundary[approxIntersection2] = iPos2;
+                if (!negativeBoundary.ContainsKey(approxIntersection2)) positiveBoundary[approxIntersection2] = iNeg2;
+                */
 
                 // Add new triangles!
                 if (Mathf.Sign(m_plane.DistanceToPoint(mesh.vertices[outlier])) > 0)
