@@ -46,7 +46,14 @@ public class TemporaryMesh
 
     public void RegisterBoundaryLine(int v1, int v2)
     {
-        boundary.AddLine(v1, v2);
+        if (v1 == v2)
+        {
+            boundary.AddPoint(v1);
+        }
+        else
+        {
+            boundary.AddLine(v1, v2);
+        }
     }
 
     public void CapBoundaires()
@@ -63,11 +70,13 @@ public class TemporaryMesh
 
     private void CapBoundary(Boundary boundary)
     {
-        while (boundary.vertices.Count >= 3)
+        int i = 0;
+        while (boundary.vertices.Count >= 3 && i < 1000000)
         {
             BoundaryVertex tipToRemove = boundary.earTips[0];
             AddTriangle(tipToRemove.next.meshIndex, tipToRemove.meshIndex, tipToRemove.previous.meshIndex);
             boundary.RemoveEar(tipToRemove);
+            i++;
         }
     }
 

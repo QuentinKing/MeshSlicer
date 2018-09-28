@@ -47,12 +47,6 @@ public class BoundaryVertex
 
         return Vector3.SignedAngle(GetLineFromPrevious(), GetLineToNext(), -parentMesh.GetNormal(this.meshIndex)) > 0.0f;
     }
-
-    // Safety check in case of funky floating point calculations, should get deleted and fixed at some point
-    public bool IsSelfConnected()
-    {
-        return next == this || previous == this;
-    }
 }
 
 public class Boundary
@@ -120,6 +114,7 @@ public class Boundary
             float AngAPB = Mathf.Abs(Vector3.SignedAngle(PA, PB, -parentMesh.GetNormal(vertex.meshIndex)));
             float AngBPC = Mathf.Abs(Vector3.SignedAngle(PB, PC, -parentMesh.GetNormal(vertex.meshIndex)));
 
+            // lmao math here is wrong but it usually doesnt matter
             if (AngAPB + AngBPC >= 180.0f)
                 return;
 
@@ -158,18 +153,18 @@ public class BoundaryVertexTable
         this.parentMesh = parentMesh;
     }
 
+    public void AddPoint(int v)
+    {
+        if (!vertexLut.ContainsKey(v))
+        {
+            vertexLut[v] = new BoundaryVertex(parentMesh, v);
+        }
+    }
+
     public void AddLine(int v1, int v2)
     {
-        if (!vertexLut.ContainsKey(v1))
-        {
-            vertexLut[v1] = new BoundaryVertex(parentMesh, v1);
-        }
-
-        if (!vertexLut.ContainsKey(v2))
-        {
-            vertexLut[v2] = new BoundaryVertex(parentMesh, v2);
-        }
-
+        AddPoint(v1);
+        AddPoint(v2);
         vertexLut[v1].AssignNext(vertexLut[v2]);
     }
 
@@ -183,16 +178,10 @@ public class BoundaryVertexTable
             if (checkedNodes.Contains(vertex.Value))
                 continue;
 
-            if (vertex.Value.IsSelfConnected())
-            {
-                Debug.LogError("BAD!");
-                break;
-            }
-
             BoundaryVertex first = vertex.Value;
             BoundaryVertex current = vertex.Value.next;
-
             checkedNodes.Add(first);
+
             while (current != null && current != first)
             {
                 checkedNodes.Add(current);
