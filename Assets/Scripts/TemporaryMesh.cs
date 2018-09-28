@@ -4,17 +4,17 @@ using UnityEngine;
 
 public class TemporaryMesh
 {
-    Dictionary<int, int> copiedVerts = new Dictionary<int, int>();
-    List<int> newTriangles = new List<int>();
-    List<Vector3> newVertices = new List<Vector3>();
-    List<Vector3> newNormals = new List<Vector3>();
-    List<Vector4> newTangents = new List<Vector4>();
+    protected Dictionary<int, int> copiedVerts = new Dictionary<int, int>();
+    protected List<int> newTriangles = new List<int>();
+    protected List<Vector3> newVertices = new List<Vector3>();
+    protected List<Vector3> newNormals = new List<Vector3>();
+    protected List<Vector4> newTangents = new List<Vector4>();
 
-    public BoundaryList boundaries = new BoundaryList();
+    public BoundaryVertexTable boundary;
 
     public TemporaryMesh()
     {
-        // Constructor
+        boundary = new BoundaryVertexTable(this);
     }
 
     private int CopyVertex(AllocatedMesh reference, int vertex, bool copyNormals, bool copyTangents)
@@ -46,7 +46,29 @@ public class TemporaryMesh
 
     public void RegisterBoundaryLine(int v1, int v2)
     {
-        boundaries.AddLine(v1, v2);
+        boundary.AddLine(v1, v2);
+    }
+
+    public void CapBoundaires()
+    {
+        List<Boundary> boundaires = boundary.GetBoundaries();
+
+        // TODO: check for holes and support non genus 0 polygons
+
+        foreach (Boundary b in boundaires)
+        {
+            CapBoundary(b);
+        }
+    }
+
+    private void CapBoundary(Boundary boundary)
+    {
+        while (boundary.vertices.Count >= 3)
+        {
+            BoundaryVertex tipToRemove = boundary.earTips[0];
+            AddTriangle(tipToRemove.next.meshIndex, tipToRemove.meshIndex, tipToRemove.previous.meshIndex);
+            boundary.RemoveEar(tipToRemove);
+        }
     }
 
     public int AddPoint(Vector3 vertex, Vector3 normal, Vector4 tangent)
@@ -60,6 +82,16 @@ public class TemporaryMesh
     public void AddTriangle(int v1, int v2, int v3)
     {
         newTriangles.AddRange(new List<int> { v1, v2, v3 });
+    }
+
+    public Vector3 GetVertex(int index)
+    {
+        return newVertices[index];
+    }
+
+    public Vector3 GetNormal(int index)
+    {
+        return newNormals[index];
     }
 
     public Mesh ConvertToFinalMesh()

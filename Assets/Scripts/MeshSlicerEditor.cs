@@ -25,5 +25,13 @@ public class MeshSlicerEditor : Editor
         {
             meshSlicer.SliceAllChildren();
         }
+
+        if (GUILayout.Button("Test Stuff"))
+        {
+            Debug.LogError(Vector3.SignedAngle(Vector3.right, Vector3.up, Vector3.forward));
+            Debug.LogError(Vector3.SignedAngle(Vector3.right, Vector3.down, Vector3.forward));
+            Debug.LogError(Vector3.SignedAngle(Vector3.right, Vector3.up, Vector3.back));
+            Debug.LogError(Vector3.SignedAngle(Vector3.right, Vector3.down, Vector3.back));
+        }
     }
 }

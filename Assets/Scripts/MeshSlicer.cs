@@ -60,6 +60,16 @@ public class MeshSlicer : MonoBehaviour
         SliceMesh(this.gameObject);
     }
 
+    private Vector3 RoundVector3(Vector3 v, int decimals)
+    {
+        float x = (float)Math.Round(v.x, decimals);
+        float y = (float)Math.Round(v.y, decimals);
+        float z = (float)Math.Round(v.z, decimals);
+        return new Vector3(x, y, z);
+    }
+
+
+
     /// <summary>
     /// Slices the given mesh along the currently set plane
     /// </summary>
@@ -80,11 +90,21 @@ public class MeshSlicer : MonoBehaviour
             return;
         }
 
+        // We will to allocate space for the original mesh data since we are constantly
+        // accessing the vertices, normals, tangents, etc.
         AllocatedMesh mesh = new AllocatedMesh(filter.sharedMesh);
+
+        // Create two temporary meshs where we will be adding new vertices and whatnot.
+        // Once we finish all the calculations we will convert these objects into real unity meshes.
         TemporaryMesh meshPositive = new TemporaryMesh();
         TemporaryMesh meshNegative = new TemporaryMesh();
+
         bool useNormals = mesh.normals.Count > 0;
         bool useTangents = mesh.tangents.Count > 0;
+
+        // Keep a look up table of vertices on the sliced cross section so we can link them together nicely
+        Dictionary<Vector3, int> positiveBoundary = new Dictionary<Vector3, int>();
+        Dictionary<Vector3, int> negativeBoundary = new Dictionary<Vector3, int>();
 
         int triangleLength = mesh.triangles.Count;
         for (int i = 0; i < triangleLength; i += 3)
@@ -92,15 +112,16 @@ public class MeshSlicer : MonoBehaviour
             int v1 = mesh.triangles[i];
             int v2 = mesh.triangles[i + 1];
             int v3 = mesh.triangles[i + 2];
-
             float d1 = Mathf.Sign(m_plane.DistanceToPoint(mesh.vertices[v1]));
             float d2 = Mathf.Sign(m_plane.DistanceToPoint(mesh.vertices[v2]));
             float d3 = Mathf.Sign(m_plane.DistanceToPoint(mesh.vertices[v3]));
 
+            // If there are vertices on either side of the plane, we need to cut this triangle
             bool cut = d1 != d2 || d1 != d3;
 
             if (!cut)
             {
+                // No cut, so just copy this triangle from the original mesh to it's respective new temporary mesh
                 if (d1 > 0)
                 {
                     meshPositive.CopyTriangleFromMesh(mesh, v1, v2, v3, useNormals, useTangents);
@@ -113,6 +134,7 @@ public class MeshSlicer : MonoBehaviour
             else
             {
                 // Slice into three new triangles
+                // base1 and base2 lie on the same side of the plane, outlier lies on the opposite side
                 int outlier;
                 int base1;
                 int base2;
@@ -145,6 +167,8 @@ public class MeshSlicer : MonoBehaviour
                 Vector3 base2_t = mesh.tangents[base2];
                 Vector3 outlier_t = mesh.tangents[outlier];
 
+                // Find the intersection between the plane and the two intersecting lines of the triangle,
+                // then interpolate the vertices values, and create new ones at the intersection point.
                 PlaneSliceLineIntersection intersection1 = m_plane.GetLineIntersection(base1_v, outlier_v - base1_v);
                 Vector3 newNormal1 = Vector3.negativeInfinity;
                 Vector4 newTangent1 = Vector4.negativeInfinity;
@@ -161,17 +185,61 @@ public class MeshSlicer : MonoBehaviour
                 int iPos2 = meshPositive.AddPoint(intersection2.intersectionPoint, newNormal2, newTangent2);
                 int iNeg2 = meshNegative.AddPoint(intersection2.intersectionPoint, newNormal2, newTangent2);
 
-                /*
+                // Create new boundary vertices that lie on the cross section on the mesh and plane.
+                // These will be used to cap off the hole thats made by slicing the mesh.
+                int b1;
+                int b2;
+                int b3;
+                int b4;
+
+                // For the lookup table, this prevents some floating point errors. The decimals may have to be
+                // adjusted depending on the fidelity of the mesh, but this should be enough for even really high-res
+                // meshes
                 Vector3 approxIntersection1 = RoundVector3(intersection1.intersectionPoint, 5);
-                if (!positiveBoundary.ContainsKey(approxIntersection1)) positiveBoundary[approxIntersection1] = iPos1;
-                if (!negativeBoundary.ContainsKey(approxIntersection1)) positiveBoundary[approxIntersection1] = iNeg1;
-
                 Vector3 approxIntersection2 = RoundVector3(intersection2.intersectionPoint, 5);
-                if (!positiveBoundary.ContainsKey(approxIntersection2)) positiveBoundary[approxIntersection2] = iPos2;
-                if (!negativeBoundary.ContainsKey(approxIntersection2)) positiveBoundary[approxIntersection2] = iNeg2;
-                */
 
-                // Add new triangles!
+                // Add these verts to our boundary lists
+                if (!positiveBoundary.ContainsKey(approxIntersection1))
+                {
+                    b1 = meshPositive.AddPoint(intersection1.intersectionPoint, -m_plane.normal, newTangent1);
+                    positiveBoundary[approxIntersection1] = b1;
+                }
+                else
+                {
+                    b1 = positiveBoundary[approxIntersection1];
+                }
+
+                if (!negativeBoundary.ContainsKey(approxIntersection1))
+                {
+                    b2 = meshNegative.AddPoint(intersection1.intersectionPoint, m_plane.normal, newTangent1);
+                    negativeBoundary[approxIntersection1] = b2;
+                }
+                else
+                {
+                    b2 = negativeBoundary[approxIntersection1];
+                }
+
+                if (!positiveBoundary.ContainsKey(approxIntersection2))
+                {
+                    b3 = meshPositive.AddPoint(intersection2.intersectionPoint, -m_plane.normal, newTangent2);
+                    positiveBoundary[approxIntersection2] = b3;
+                }
+                else
+                {
+                    b3 = positiveBoundary[approxIntersection2];
+                }
+
+                if (!negativeBoundary.ContainsKey(approxIntersection2))
+                {
+                    b4 = meshNegative.AddPoint(intersection2.intersectionPoint, m_plane.normal, newTangent2);
+                    negativeBoundary[approxIntersection2] = b4;
+                }
+                else
+                {
+                    b4 = negativeBoundary[approxIntersection2];
+                }
+
+                // The triangle we sliced is now three new triangles, add these to our new meshes
                 if (Mathf.Sign(m_plane.DistanceToPoint(mesh.vertices[outlier])) > 0)
                 {
                     int p1 = meshPositive.AddPoint(mesh.vertices[outlier], mesh.normals[outlier], mesh.tangents[outlier]);
@@ -180,8 +248,9 @@ public class MeshSlicer : MonoBehaviour
                     meshPositive.AddTriangle(p1, iPos2, iPos1);
                     meshNegative.AddTriangle(iNeg1, iNeg2, p3);
                     meshNegative.AddTriangle(p3, p2, iNeg1);
-                    meshPositive.RegisterBoundaryLine(iPos2, iPos1);
-                    meshNegative.RegisterBoundaryLine(iNeg1, iNeg2);
+
+                    meshPositive.RegisterBoundaryLine(b3, b1);
+                    meshNegative.RegisterBoundaryLine(b2, b4);
                 }
                 else
                 {
@@ -191,15 +260,19 @@ public class MeshSlicer : MonoBehaviour
                     meshNegative.AddTriangle(p1, iNeg2, iNeg1);
                     meshPositive.AddTriangle(iPos1, iPos2, p3);
                     meshPositive.AddTriangle(p3, p2, iPos1);
-                    meshPositive.RegisterBoundaryLine(iPos1, iPos2);
-                    meshNegative.RegisterBoundaryLine(iNeg2, iNeg1);
+
+                    meshPositive.RegisterBoundaryLine(b1, b3);
+                    meshNegative.RegisterBoundaryLine(b4, b2);
                 }
             }
         }
 
-        filter.sharedMesh = meshPositive.ConvertToFinalMesh();
-        List<BoundaryNode> nodes = meshPositive.boundaries.circularLists;
+        // Cap off the cross section
+        meshPositive.CapBoundaires();
+        meshNegative.CapBoundaires();
 
+        // Create and assign our new meshes
+        filter.sharedMesh = meshPositive.ConvertToFinalMesh();
         GameObject NewObj = GameObject.Instantiate(meshObject);
         NewObj.GetComponent<MeshFilter>().sharedMesh = meshNegative.ConvertToFinalMesh();
         NewObj.transform.SetParent(meshObject.transform.parent, false);
