@@ -93,19 +93,10 @@ public class Boundary
         BoundaryVertex prev = vertex.previous;
         BoundaryVertex next = vertex.next;
 
-        Vector3 A = parentMesh.GetVertex(vertex.meshIndex);
-        Vector3 B = parentMesh.GetVertex(prev.meshIndex);
-        Vector3 C = parentMesh.GetVertex(next.meshIndex);
-
-        Vector3 AB = parentMesh.GetVertex(prev.meshIndex) - parentMesh.GetVertex(vertex.meshIndex);
-        Vector3 AC = parentMesh.GetVertex(next.meshIndex) - parentMesh.GetVertex(vertex.meshIndex);
-
         foreach (BoundaryVertex other in vertices)
         {
             if (other == vertex || other == prev || other == next)
                 continue;
-
-            Vector3 P = parentMesh.GetVertex(other.meshIndex);
 
             Vector3 PA = parentMesh.GetVertex(vertex.meshIndex) - parentMesh.GetVertex(other.meshIndex);
             Vector3 PB = parentMesh.GetVertex(prev.meshIndex) - parentMesh.GetVertex(other.meshIndex);
@@ -113,20 +104,11 @@ public class Boundary
 
             float AngAPB = Mathf.Abs(Vector3.SignedAngle(PA, PB, -parentMesh.GetNormal(vertex.meshIndex)));
             float AngBPC = Mathf.Abs(Vector3.SignedAngle(PB, PC, -parentMesh.GetNormal(vertex.meshIndex)));
+            float AngAPC = Mathf.Abs(Vector3.SignedAngle(PA, PC, -parentMesh.GetNormal(vertex.meshIndex)));
 
-            // lmao math here is wrong but it usually doesnt matter
-            if (AngAPB + AngBPC >= 180.0f)
+            // Is this point within the triangle? If so, not an ear tip
+            if (Mathf.Min(new float[] { AngAPB + AngBPC, AngAPB + AngAPC, AngBPC + AngAPC }) >= 180.0f)
                 return;
-
-            /**
-            float area = Vector3.Cross(AB, AC).magnitude;
-            float alpha = Vector3.Cross(PB, PC).magnitude / area;
-            float beta = Vector3.Cross(PC, PA).magnitude / area;
-            float gamma = 1 - alpha - beta;
-
-            if (alpha >= 0 && alpha <= 1 && beta >= 0 && beta <= 1 && gamma >= 0 && gamma <= 1)
-                return;
-            **/
         }
 
         earTips.Add(vertex);
@@ -134,6 +116,7 @@ public class Boundary
 
     private void CheckAllEarTips()
     {
+        earTips.Clear();
         for (int i = 0; i < vertices.Count; i++)
         {
             CheckVertexForEarTip(vertices[i]);
@@ -194,6 +177,16 @@ public class BoundaryVertexTable
             }
         }
 
+        if (boundaries.Count > 1)
+        {
+            FindAndConnectHoles(boundaries);
+        }
+
         return boundaries;
+    }
+
+    public Boundary FindAndConnectHoles(List<Boundary> boundaries)
+    {
+        return null;
     }
 }

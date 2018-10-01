@@ -81,7 +81,7 @@ public class PlaneSlice
     }
 
     /// <summary>
-    /// Calculated the intersection between a line and this plane
+    /// Calculate the intersection between a line and this plane
     /// </summary>
     /// <param name="point">Point on line</param>
     /// <param name="direction">Direction of line</param>
@@ -99,5 +99,13 @@ public class PlaneSlice
             float t = -Vector3.Dot(this.normal, point - this.point) / u;
             return new PlaneSliceLineIntersection(true, this, point, direction, point + t * direction, t);
         }
+    }
+
+    public PlaneSlice TransformIntoObjectSpace(Transform obj)
+    {
+        PlaneSlice newPlane = new PlaneSlice();
+        newPlane.point = obj.InverseTransformPoint(this.point);
+        newPlane.normal = Vector3.Normalize(obj.InverseTransformDirection(this.normal));
+        return newPlane;
     }
 }

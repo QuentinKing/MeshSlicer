@@ -16,6 +16,11 @@ public class MeshSlicerEditor : Editor
         EditorGUILayout.Space();
         EditorGUILayout.LabelField("Inspector Functions", EditorStyles.boldLabel);
 
+        if (GUILayout.Button("Center Plane on Mesh"))
+        {
+            meshSlicer.CenterPlane();
+        }
+
         if (GUILayout.Button("Slice This"))
         {
             meshSlicer.SliceCurrentMesh();

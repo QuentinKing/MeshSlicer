@@ -60,8 +60,6 @@ public class TemporaryMesh
     {
         List<Boundary> boundaires = boundary.GetBoundaries();
 
-        // TODO: check for holes and support non genus 0 polygons
-
         foreach (Boundary b in boundaires)
         {
             CapBoundary(b);
@@ -70,13 +68,17 @@ public class TemporaryMesh
 
     private void CapBoundary(Boundary boundary)
     {
-        int i = 0;
-        while (boundary.vertices.Count >= 3 && i < 1000000)
+        while (boundary.vertices.Count >= 3)
         {
+            if (boundary.earTips.Count == 0)
+            {
+                Debug.LogError("No eartips to remove!");
+                return;
+            }
+            
             BoundaryVertex tipToRemove = boundary.earTips[0];
             AddTriangle(tipToRemove.next.meshIndex, tipToRemove.meshIndex, tipToRemove.previous.meshIndex);
             boundary.RemoveEar(tipToRemove);
-            i++;
         }
     }
 
