@@ -5,6 +5,9 @@
 [Bb]uilds/
 Assets/AssetStoreTools*
 Assets/female_head_3_OBJ
+Assets/female_head_3_OBJ.meta
+Assets/Scripts/AnimationScripts
+Assets/Scripts/AnimationScripts.mata
 
 # Visual Studio cache directory
 .vs/
